@@ -1,9 +1,17 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-add_definitions(-std=c++11)
+set(CMAKE_CXX_STANDARD 14)
 
-set(CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
+set(CXX_FLAGS "-Wall \
+		-Werror=delete-non-virtual-dtor \
+                -Werror=return-type \
+                -Werror=unused-result \
+                -Werror=format-security \
+                -Werror=delete-incomplete \
+		-Werror=int-in-bool-context \
+                -Werror=unused-but-set-variable \
+		-Werror=old-style-cast")
+set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
 project(playback)
 
