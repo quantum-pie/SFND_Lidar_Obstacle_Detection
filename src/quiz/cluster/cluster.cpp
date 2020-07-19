@@ -5,6 +5,7 @@
 #include "../../render/box.h"
 #include <chrono>
 #include <string>
+#include <unordered_set>
 #include "kdtree.h"
 
 // Arguments:
@@ -18,7 +19,7 @@ pcl::visualization::PCLVisualizer::Ptr initScene(Box window, int zoom)
   	viewer->setCameraPosition(0, 0, zoom, 0, 1, 0);
   	viewer->addCoordinateSystem (1.0);
 
-  	viewer->addCube(window.x_min, window.x_max, window.y_min, window.y_max, 0, 0, 1, 1, 1, "window");
+  	viewer->addCube(window.x_min, window.x_max, window.y_min, window.y_max, 0, 0, 0, 0, 0, "window");
   	return viewer;
 }
 
@@ -75,15 +76,30 @@ void render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Bo
 
 }
 
+void proximity(int id, const std::vector<std::vector<float>>& points, std::vector<int>& cluster, KdTree* tree, 
+                float distanceTol, std::unordered_set<int>& processed_ids) {
+    processed_ids.insert(id);
+    cluster.push_back(id);
+    auto neighbours = tree->search(points[id], distanceTol);
+    for (int n : neighbours) {
+        if (not processed_ids.count(n)) {
+            proximity(n, points, cluster, tree, distanceTol, processed_ids);
+        }
+    }
+}
+
 std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
 {
-
-	// TODO: Fill out this function to return list of indices for each cluster
-
 	std::vector<std::vector<int>> clusters;
- 
+    std::unordered_set<int> processed_ids;
+    for (int id = 0; id < points.size(); ++id) {
+        if (not processed_ids.count(id)) {
+            std::vector<int> cluster;
+            proximity(id, points, cluster, tree, distanceTol, processed_ids);
+            clusters.emplace_back(std::move(cluster));
+        }
+    }
 	return clusters;
-
 }
 
 int main ()
@@ -113,7 +129,7 @@ int main ()
   	render2DTree(tree->root,viewer,window, it);
   
   	std::cout << "Test Search" << std::endl;
-  	std::vector<int> nearby = tree->search({-6,7},3.0);
+  	std::vector<int> nearby = tree->search({7,6},3.0);
   	for(int index : nearby)
       std::cout << index << ",";
   	std::cout << std::endl;
